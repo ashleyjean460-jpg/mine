@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>LifeSim Mobile</title>
+  <link rel="stylesheet" href="/static/app.css"/>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="title">
+          <h1 id="name">LifeSim</h1>
+          <div class="sub" id="subtitle">Tap Actions → Age Up to begin</div>
+        </div>
+        <div class="pill" id="moneyPill"><b>$0</b> cash</div>
+      </div>
+
+      <div class="pillrow">
+        <div class="pill">Age <b id="age">0</b></div>
+        <div class="pill">City <b id="city">—</b></div>
+        <div class="pill">School <b id="school">—</b></div>
+        <div class="pill">Job <b id="job">Unemployed</b></div>
+      </div>
+    </div>
+
+    <!-- LIFE -->
+    <div class="section active" id="sec-life">
+      <div class="card">
+        <div class="grid2">
+          <div class="stat">
+            <div class="k">Health</div>
+            <div class="v" id="sHealth">—</div>
+            <div class="bar"><div id="bHealth"></div></div>
+          </div>
+          <div class="stat">
+            <div class="k">Happiness</div>
+            <div class="v" id="sHappy">—</div>
+            <div class="bar"><div id="bHappy"></div></div>
+          </div>
+          <div class="stat">
+            <div class="k">Smarts</div>
+            <div class="v" id="sSmart">—</div>
+            <div class="bar"><div id="bSmart"></div></div>
+          </div>
+          <div class="stat">
+            <div class="k">Looks</div>
+            <div class="v" id="sLooks">—</div>
+            <div class="bar"><div id="bLooks"></div></div>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="row">
+          <div class="label">Education</div>
+          <div class="value" id="edu">No diploma</div>
+        </div>
+        <div class="row">
+          <div class="label">Annual Salary</div>
+          <div class="value" id="salary">$0</div>
+        </div>
+        <div class="row">
+          <div class="label">Performance</div>
+          <div class="value" id="perf">—</div>
+        </div>
+
+        <div class="btnrow">
+          <button class="primary" id="btnNew">New Life</button>
+          <button id="btnReset">Hard Reset</button>
+          <button class="ghost" id="btnExport">Export Save</button>
+          <button class="ghost" id="btnImport">Import Save</button>
+        </div>
+      </div>
+
+      <div class="eventbox" id="eventBox" style="display:none;">
+        <p class="etitle">📌 Event</p>
+        <p class="emsg" id="eventMsg"></p>
+        <div class="btnrow" id="eventChoices"></div>
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="section" id="sec-actions">
+      <div class="card">
+        <div class="row">
+          <div class="label">Next step</div>
+          <div class="value">Choose what to do this year</div>
+        </div>
+
+        <div class="btnrow">
+          <button class="primary" id="btnAgeUp">Age Up (1 year)</button>
+          <button class="good" id="btnStudy">Study</button>
+          <button class="good" id="btnExercise">Exercise</button>
+          <button id="btnMeditate">Meditate</button>
+          <button class="bad" id="btnParty">Party</button>
+          <button id="btnGig">Work a Gig (+$250)</button>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="row">
+          <div class="label">Autosave</div>
+          <div class="value">On (local)</div>
+        </div>
+        <div class="small">Tip: If an event pops up, make a choice to continue.</div>
+      </div>
+    </div>
+
+    <!-- JOB -->
+    <div class="section" id="sec-job">
+      <div class="card">
+        <div class="row">
+          <div class="label">Job Board</div>
+          <div class="value">Apply instantly</div>
+        </div>
+        <div class="small">Jobs depend on Smarts + Education. College unlocks more options.</div>
+
+        <div class="hr"></div>
+
+        <div class="list" id="jobList"></div>
+      </div>
+    </div>
+
+    <!-- SOCIAL -->
+    <div class="section" id="sec-social">
+      <div class="card">
+        <div class="row">
+          <div class="label">Relationships</div>
+          <div class="value" id="relCount">0</div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="list" id="relList"></div>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div class="section" id="sec-log">
+      <div class="card">
+        <div class="row">
+          <div class="label">Life Log</div>
+          <div class="value" id="logCount">0</div>
+        </div>
+        <div class="hr"></div>
+        <div class="list" id="logList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <div class="navinner">
+      <div class="navbtn active" data-tab="life">Life</div>
+      <div class="navbtn" data-tab="actions">Actions</div>
+      <div class="navbtn" data-tab="job">Job</div>
+      <div class="navbtn" data-tab="social">Social</div>
+      <div class="navbtn" data-tab="log">Log</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+/* ----------------------------
+   Game Data
+---------------------------- */
+const FIRST = ["Ava","Mia","Noah","Liam","Olivia","Emma","Sophia","Ethan","Mason","Isabella","Amelia","Harper","Lucas","Elijah","Aria"];
+const LAST  = ["Johnson","Smith","Williams","Brown","Jones","Garcia","Miller","Davis","Rodriguez","Martinez","Hernandez","Lopez","Gonzalez","Wilson","Anderson"];
+const CITIES = ["New York","Los Angeles","Chicago","Houston","Phoenix","Philadelphia","San Antonio","San Diego","Dallas","San Jose","Miami","Seattle","Boston","Denver","Atlanta"];
+
+const JOBS = [
+  {title:"Retail Associate", req_smarts:10, req_edu:"High School", salary:28000},
+  {title:"Barista",          req_smarts:10, req_edu:"High School", salary:30000},
+  {title:"Sales Rep",        req_smarts:20, req_edu:"High School", salary:36000},
+  {title:"Office Assistant", req_smarts:25, req_edu:"High School", salary:38000},
+  {title:"Nurse Aide",       req_smarts:35, req_edu:"High School", salary:42000},
+  {title:"IT Support",       req_smarts:45, req_edu:"College",     salary:52000},
+  {title:"Accountant",       req_smarts:55, req_edu:"College",     salary:60000},
+  {title:"Software Dev",     req_smarts:65, req_edu:"College",     salary:82000},
+  {title:"Registered Nurse", req_smarts:60, req_edu:"College",     salary:78000},
+  {title:"Doctor",           req_smarts:85, req_edu:"College",     salary:180000},
+];
+
+const DEGREES = ["Biology","Nursing","Business","Computer Science","Psychology","Engineering","Education","Art","Finance","Criminal Justice"];
+
+const SAVE_KEY = "lifesim_save_v1";
+
+/* ----------------------------
+   Helpers
+---------------------------- */
+const clamp = (x, lo=0, hi=100) => Math.max(lo, Math.min(hi, x));
+const rint = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+const pick = (arr) => arr[Math.floor(Math.random()*arr.length)];
+const coin = (p) => Math.random() < p;
+
+function fmtMoney(n){
+  const sign = n < 0 ? "-" : "";
+  n = Math.abs(Math.trunc(n));
+  return sign + "$" + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 1400);
+}
+
+function yearlyExpenses(age, hasJob){
+  let base = 1500 + age * 60;
+  if(age >= 18){
+    base += 9000;
+    if(hasJob) base += 2000;
+  }
+  return base;
+}
+
+/* ----------------------------
+   State
+---------------------------- */
+let state = null;
+let pendingEvent = null; // {title, msg, options:[{label,effects}]}
+
+function defaultLife(){
+  const last = pick(LAST);
+  const name = `${pick(FIRST)} ${last}`;
+  return {
+    name,
+    city: pick(CITIES),
+    age: 0,
+    alive: true,
+
+    health: rint(60,95),
+    happiness: rint(50,90),
+    smarts: rint(30,75),
+    looks: rint(30,75),
+
+    money: rint(0,2500),
+
+    education_level: "None", // None, High School, College
+    in_school: true,
+    school_stage: "Preschool",
+    grade_progress: 0,
+
+    job_title: "Unemployed",
+    job_salary: 0,
+    job_level: "Unemployed",
+    job_performance: 50,
+
+    relationships: [
+      {name: `${pick(FIRST)} ${last}`, relation:"Parent", closeness: rint(40,80)},
+      {name: `${pick(FIRST)} ${last}`, relation:"Parent", closeness: rint(40,80)}
+    ],
+
+    year_log: []
+  };
+}
+
+/* ----------------------------
+   Save / Load
+---------------------------- */
+function save(){
+  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+}
+
+function load(){
+  const raw = localStorage.getItem(SAVE_KEY);
+  if(!raw) return false;
+  try{
+    state = JSON.parse(raw);
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+function hardReset(){
+  localStorage.removeItem(SAVE_KEY);
+  state = null;
+  pendingEvent = null;
+}
+
+/* ----------------------------
+   Logging
+---------------------------- */
+function logLine(s){
+  state.year_log.push(s);
+  if(state.year_log.length > 200) state.year_log = state.year_log.slice(-200);
+}
+
+/* ----------------------------
+   School
+---------------------------- */
+function schoolTick(){
+  if(!state.in_school) return;
+
+  state.smarts = clamp(state.smarts + rint(0,3));
+  state.grade_progress += rint(18,30);
+
+  if(state.grade_progress < 100) return;
+  state.grade_progress = 0;
+
+  if(state.school_stage === "Preschool" && state.age >= 5){
+    state.school_stage = "Elementary";
+    logLine("Started Elementary School.");
+  }else if(state.school_stage === "Elementary" && state.age >= 11){
+    state.school_stage = "Middle School";
+    logLine("Started Middle School.");
+  }else if(state.school_stage === "Middle School" && state.age >= 14){
+    state.school_stage = "High School";
+    logLine("Started High School.");
+  }else if(state.school_stage === "High School" && state.age >= 18){
+    state.education_level = "High School";
+    if(state.smarts >= 55 && (state.money > 500 || coin(0.55))){
+      state.school_stage = "College";
+      logLine("Graduated High School and enrolled in College.");
+    }else{
+      state.in_school = false;
+      state.school_stage = "None";
+      logLine("Graduated High School and entered the workforce.");
+    }
+  }else if(state.school_stage === "College" && state.age >= 22){
+    state.education_level = "College";
+    state.in_school = false;
+    state.school_stage = "None";
+    logLine(`Graduated College with a degree in ${pick(DEGREES)}.`);
+  }
+}
+
+/* ----------------------------
+   Relationships
+---------------------------- */
+function relTick(){
+  state.relationships.forEach(r => r.closeness = clamp(r.closeness + rint(-5,5)));
+
+  if(state.age >= 6 && state.age <= 18 && coin(0.35)){
+    const f = {name: `${pick(FIRST)} ${pick(LAST)}`, relation:"Friend", closeness: rint(35,70)};
+    state.relationships.push(f);
+    logLine(`Made a new friend: ${f.name}.`);
+  }
+
+  const hasPartner = state.relationships.some(r => r.relation === "Partner");
+  if(state.age >= 16 && !hasPartner && coin(0.22)){
+    const p = {name:`${pick(FIRST)} ${pick(LAST)}`, relation:"Partner", closeness: rint(40,75)};
+    state.relationships.push(p);
+    logLine(`Started dating ${p.name}.`);
+  }
+}
+
+/* ----------------------------
+   Career
+---------------------------- */
+function eligibleJobs(){
+  const edu = state.education_level;
+  return JOBS.filter(j => {
+    const eduOk =
+      (j.req_edu === "High School" && (edu === "High School" || edu === "College")) ||
+      (j.req_edu === "College" && edu === "College");
+    const smartOk = state.smarts >= j.req_smarts;
+    return eduOk && smartOk;
+  });
+}
+
+function takeJob(job){
+  state.job_title = job.title;
+  state.job_salary = job.salary + rint(-2000, 4000);
+  state.job_level = state.job_salary > 35000 ? "Entry" : "Part-time";
+  state.job_performance = 50;
+  logLine(`Accepted job: ${state.job_title} at ${fmtMoney(state.job_salary)}/yr.`);
+  toast("Hired!");
+}
+
+function careerTick(){
+  if(state.age < 14) return;
+
+  if(state.job_title === "Unemployed"){
+    if(coin(0.55)){
+      const list = eligibleJobs();
+      if(list.length && coin(0.70)){
+        takeJob(pick(list));
+      }else{
+        logLine("Applied to jobs but didn't get an offer.");
+      }
+    }
+    return;
+  }
+
+  let promo = 0.05 + (state.job_performance - 50)/200;
+  if(state.education_level === "College") promo += 0.05;
+  promo = Math.max(0, promo);
+
+  if(coin(promo)){
+    state.job_salary = Math.trunc(state.job_salary * (1.05 + Math.random()*0.13));
+    state.job_level = nextJobLevel(state.job_level);
+    logLine(`Got promoted! Level: ${state.job_level}. Salary: ${fmtMoney(state.job_salary)}/yr.`);
+  }
+
+  if(coin(0.03) && state.job_performance < 40){
+    logLine(`Got fired from ${state.job_title}.`);
+    state.job_title = "Unemployed";
+    state.job_salary = 0;
+    state.job_level = "Unemployed";
+    state.job_performance = 50;
+  }
+}
+
+function nextJobLevel(level){
+  const levels = ["Unemployed","Part-time","Entry","Mid","Senior","Manager","Director"];
+  const i = levels.indexOf(level);
+  if(i < 0) return level;
+  return levels[Math.min(i+1, levels.length-1)];
+}
+
+/* ----------------------------
+   Events
+---------------------------- */
+function applyEffects(eff){
+  for(const [k,v] of Object.entries(eff)){
+    if(k === "enroll_college" && v === 1){
+      state.in_school = true;
+      state.school_stage = "College";
+      logLine("Enrolled in College.");
+      continue;
+    }
+    if(typeof state[k] === "number"){
+      state[k] += v;
+    }
+    if(k === "job_performance"){
+      state.job_performance += v;
+    }
+    if(k === "money"){
+      state.money += v;
+    }
+  }
+
+  state.health = clamp(state.health);
+  state.happiness = clamp(state.happiness);
+  state.smarts = clamp(state.smarts);
+  state.looks = clamp(state.looks);
+  state.job_performance = clamp(state.job_performance);
+}
+
+function createEvent(){
+  const pool = [];
+
+  pool.push({
+    title:"You got sick this year.",
+    options:[
+      {label:"Rest and recover", effects:{health:+6, happiness:-2, money:-200}},
+      {label:"Ignore it", effects:{health:-10, happiness:-1}},
+      {label:"Go to the doctor", effects:{health:+10, money:-600}}
+    ]
+  });
+
+  pool.push({
+    title:"A surprise expense hit you.",
+    options:[
+      {label:"Pay it responsibly", effects:{money:-700, happiness:-2}},
+      {label:"Put it off", effects:{money:-200, happiness:-4, health:-1}},
+      {label:"Ask family for help", effects:{money:-150, happiness:+3}}
+    ]
+  });
+
+  pool.push({
+    title:"A friend invited you to a big event.",
+    options:[
+      {label:"Go and be social", effects:{happiness:+8, money:-120}},
+      {label:"Skip and recharge", effects:{happiness:+3, health:+2}},
+      {label:"Go but overdo it", effects:{happiness:+5, health:-6}}
+    ]
+  });
+
+  pool.push({
+    title:"You thought about starting a new routine.",
+    options:[
+      {label:"Hit the gym", effects:{health:+5, looks:+4, happiness:+1, money:-150}},
+      {label:"Focus on sleep", effects:{health:+6, happiness:+2}},
+      {label:"Do nothing", effects:{happiness:-1}}
+    ]
+  });
+
+  if(state.job_title !== "Unemployed"){
+    pool.push({
+      title:`Your boss gave you extra responsibilities at ${state.job_title}.`,
+      options:[
+        {label:"Step up", effects:{happiness:-2, smarts:+2, job_performance:+10}},
+        {label:"Do the minimum", effects:{happiness:+1, job_performance:-8}},
+        {label:"Complain", effects:{happiness:-2, job_performance:-15}}
+      ]
+    });
+  }
+
+  if(state.education_level === "High School" && state.age >= 18 && state.age <= 24 && state.job_title === "Unemployed"){
+    pool.push({
+      title:"You considered going to college.",
+      options:[
+        {label:"Enroll", effects:{money:-3000, smarts:+5, happiness:-1, enroll_college:1}},
+        {label:"Work instead", effects:{happiness:+1}},
+        {label:"Take a gap year", effects:{happiness:+2, money:-400}}
+      ]
+    });
+  }
+
+  return pick(pool);
+}
+
+function showEvent(ev){
+  pendingEvent = ev;
+  const box = document.getElementById("eventBox");
+  const msg = document.getElementById("eventMsg");
+  const choices = document.getElementById("eventChoices");
+
+  msg.textContent = ev.title;
+  choices.innerHTML = "";
+
+  ev.options.forEach(opt=>{
+    const b = document.createElement("button");
+    b.className = "primary";
+    b.textContent = opt.label;
+    b.onclick = ()=>{
+      applyEffects(opt.effects);
+      logLine(`Event: ${ev.title} → Chose '${opt.label}'.`);
+      pendingEvent = null;
+      box.style.display = "none";
+      save();
+      render();
+      toast("Choice applied");
+    };
+    choices.appendChild(b);
+  });
+
+  box.style.display = "block";
+}
+
+/* ----------------------------
+   Age Up
+---------------------------- */
+function ageUp(){
+  if(!state || !state.alive) return;
+
+  if(pendingEvent){
+    toast("Make an event choice first");
+    return;
+  }
+
+  state.age += 1;
+
+  if(state.job_title !== "Unemployed"){
+    const income = state.job_salary;
+    const taxes = income > 20000 ? Math.trunc(income * 0.18) : Math.trunc(income * 0.10);
+    const net = income - taxes;
+    state.money += net;
+    logLine(`Worked as ${state.job_title}. Took home ${fmtMoney(net)} after taxes.`);
+    state.job_performance = clamp(state.job_performance + rint(-8,10));
+  }else{
+    logLine("No job income this year.");
+  }
+
+  const exp = yearlyExpenses(state.age, state.job_title !== "Unemployed");
+  state.money -= exp;
+  logLine(`Paid living expenses: -${fmtMoney(exp)}.`);
+
+  state.health = clamp(state.health + rint(-6,4));
+  state.happiness = clamp(state.happiness + rint(-6,6));
+
+  schoolTick();
+  careerTick();
+  relTick();
+
+  let risk = 0;
+  if(state.age > 70) risk += (state.age - 70) * 0.012;
+  if(state.health < 30) risk += 0.05;
+  if(coin(risk)){
+    state.alive = false;
+    logLine(`Passed away at age ${state.age}.`);
+    toast("Game Over");
+  }else{
+    if(coin(0.85)){
+      const ev = createEvent();
+      showEvent(ev);
+    }
+  }
+
+  save();
+  render();
+}
+
+/* ----------------------------
+   Activities
+---------------------------- */
+function doActivity(label, eff){
+  if(pendingEvent){
+    toast("Choose the event first");
+    return;
+  }
+  applyEffects(eff);
+  logLine(`Did activity: ${label}.`);
+  save();
+  render();
+  toast(label);
+}
+
+/* ----------------------------
+   UI Render
+---------------------------- */
+function setBar(id, val){
+  document.getElementById(id).style.width = clamp(val) + "%";
+}
+
+function renderJobs(){
+  const list = document.getElementById("jobList");
+  list.innerHTML = "";
+  const jobs = eligibleJobs();
+
+  if(state.age < 14){
+    list.innerHTML = `<div class="item"><div class="name">Too young to work</div><div class="small">Try again at age 14.</div></div>`;
+    return;
+  }
+
+  if(!jobs.length){
+    list.innerHTML = `<div class="item"><div class="name">No eligible jobs</div><div class="small">Raise Smarts or finish school to unlock more.</div></div>`;
+    return;
+  }
+
+  jobs.forEach(j=>{
+    const el = document.createElement("div");
+    el.className = "item";
+    el.innerHTML = `
+      <div class="top">
+        <div class="name">${j.title}</div>
+        <div class="meta">~${fmtMoney(j.salary)}/yr</div>
+      </div>
+      <div class="small">Requires: ${j.req_edu} + Smarts ${j.req_smarts}+</div>
+      <div class="btnrow" style="margin-top:10px">
+        <button class="primary">Apply</button>
+      </div>
+    `;
+    el.querySelector("button").onclick = ()=>takeJob(j);
+    list.appendChild(el);
+  });
+}
+
+function renderRels(){
+  const list = document.getElementById("relList");
+  const count = document.getElementById("relCount");
+  list.innerHTML = "";
+  count.textContent = state.relationships.length;
+
+  state.relationships
+    .slice()
+    .sort((a,b)=>b.closeness-a.closeness)
+    .forEach(r=>{
+      const el = document.createElement("div");
+      el.className = "item";
+      const bar = "█".repeat(Math.floor(r.closeness/10)) + "░".repeat(10 - Math.floor(r.closeness/10));
+      el.innerHTML = `
+        <div class="top">
+          <div class="name">${r.relation}: ${r.name}</div>
+          <div class="meta">${r.closeness}/100</div>
+        </div>
+        <div class="small">${bar}</div>
+      `;
+      list.appendChild(el);
+    });
+}
+
+function renderLog(){
+  const list = document.getElementById("logList");
+  const count = document.getElementById("logCount");
+  list.innerHTML = "";
+  count.textContent = state.year_log.length;
+
+  const lines = state.year_log.slice(-30).reverse();
+  if(!lines.length){
+    list.innerHTML = `<div class="item"><div class="name">No entries yet</div><div class="small">Age up to generate a life story.</div></div>`;
+    return;
+  }
+
+  lines.forEach(s=>{
+    const el = document.createElement("div");
+    el.className = "item";
+    el.innerHTML = `<div class="name">${s}</div>`;
+    list.appendChild(el);
+  });
+}
+
+function render(){
+  if(!state){
+    document.getElementById("name").textContent = "LifeSim";
+    document.getElementById("subtitle").textContent = "Tap New Life to start";
+    return;
+  }
+
+  document.getElementById("name").textContent = state.name + (state.alive ? "" : " 🕯️");
+  document.getElementById("subtitle").textContent = state.alive
+    ? "Make choices year by year"
+    : "Game Over — start a new life";
+
+  document.getElementById("age").textContent = state.age;
+  document.getElementById("city").textContent = state.city;
+  document.getElementById("school").textContent = state.in_school ? state.school_stage : "None";
+  document.getElementById("job").textContent = state.job_title;
+
+  document.getElementById("moneyPill").innerHTML = `<b>${fmtMoney(state.money)}</b> cash`;
+
+  document.getElementById("sHealth").textContent = state.health;
+  document.getElementById("sHappy").textContent = state.happiness;
+  document.getElementById("sSmart").textContent = state.smarts;
+  document.getElementById("sLooks").textContent = state.looks;
+
+  setBar("bHealth", state.health);
+  setBar("bHappy", state.happiness);
+  setBar("bSmart", state.smarts);
+  setBar("bLooks", state.looks);
+
+  const edu = state.education_level === "None" ? "No diploma" : state.education_level;
+  document.getElementById("edu").textContent = edu;
+
+  document.getElementById("salary").textContent = fmtMoney(state.job_salary);
+  document.getElementById("perf").textContent = `${state.job_performance}/100`;
+
+  renderJobs();
+  renderRels();
+  renderLog();
+}
+
+/* ----------------------------
+   Navigation
+---------------------------- */
+function setTab(tab){
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll(".navbtn").forEach(b=>b.classList.remove("active"));
+
+  document.getElementById(`sec-${tab}`).classList.add("active");
+  document.querySelector(`.navbtn[data-tab="${tab}"]`).classList.add("active");
+}
+
+/* ----------------------------
+   Import/Export
+---------------------------- */
+function exportSave(){
+  if(!state){ toast("No save"); return; }
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "lifesim_save.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importSave(){
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json";
+  input.onchange = (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const obj = JSON.parse(reader.result);
+        state = obj;
+        pendingEvent = null;
+        save();
+        render();
+        toast("Imported");
+      }catch(err){
+        toast("Bad file");
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+/* ----------------------------
+   Buttons
+---------------------------- */
+document.querySelectorAll(".navbtn").forEach(btn=>{
+  btn.addEventListener("click", ()=> setTab(btn.dataset.tab));
+});
+
+document.getElementById("btnNew").onclick = ()=>{
+  state = defaultLife();
+  pendingEvent = null;
+  logLine(`Born in ${state.city}. Welcome, ${state.name}!`);
+  save();
+  render();
+  toast("New life!");
+};
+
+document.getElementById("btnReset").onclick = ()=>{
+  hardReset();
+  toast("Reset");
+  state = defaultLife();
+  logLine(`Born in ${state.city}. Welcome, ${state.name}!`);
+  save();
+  render();
+};
+
+document.getElementById("btnAgeUp").onclick = ()=>{
+  if(!state){ toast("Start a new life"); return; }
+  if(!state.alive){ toast("Game over — New Life"); return; }
+  ageUp();
+};
+
+document.getElementById("btnStudy").onclick = ()=> doActivity("Study", {smarts:+3, happiness:-1});
+document.getElementById("btnExercise").onclick = ()=> doActivity("Exercise", {health:+4, looks:+2, happiness:+1});
+document.getElementById("btnMeditate").onclick = ()=> doActivity("Meditate", {happiness:+4});
+document.getElementById("btnParty").onclick = ()=> doActivity("Party", {happiness:+6, health:-3, money:-80});
+document.getElementById("btnGig").onclick = ()=> doActivity("Work a Gig", {money:+250, happiness:-2, health:-1});
+
+document.getElementById("btnExport").onclick = exportSave;
+document.getElementById("btnImport").onclick = importSave;
+
+/* ----------------------------
+   Boot
+---------------------------- */
+if(!load()){
+  state = defaultLife();
+  logLine(`Born in ${state.city}. Welcome, ${state.name}!`);
+  save();
+}
+render();
+</script>
+</body>
+</html>
